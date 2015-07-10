@@ -3,20 +3,21 @@ $:.push File.expand_path("../lib", __FILE__)
 
 Gem::Specification.new do |s|
   s.name        = "pusher"
-  s.version     = "0.14.1"
+  s.version     = "0.14.5"
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Pusher"]
   s.email       = ["support@pusher.com"]
-  s.homepage    = "http://github.com/pusher/pusher-gem"
+  s.homepage    = "http://github.com/pusher/pusher-http-ruby"
   s.summary     = %q{Pusher API client}
   s.description = %q{Wrapper for pusher.com REST api}
   s.license     = "MIT"
 
   s.add_dependency "multi_json", "~> 1.0"
-  s.add_dependency 'signature', "~> 0.1.6"
   s.add_dependency "glebtv-httpclient"
+  s.add_dependency 'signature', "~> 0.1.8"
+  s.add_dependency "jruby-openssl" if defined?(JRUBY_VERSION)
 
-  s.add_development_dependency "rspec", "~> 2.0"
+  s.add_development_dependency "rspec", "~> 3.0"
   s.add_development_dependency "webmock"
   s.add_development_dependency "em-http-request", "~> 1.1.0"
   s.add_development_dependency "rake"

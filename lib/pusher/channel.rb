@@ -10,8 +10,8 @@ module Pusher
       @uri = base_url.dup
       if Pusher::Channel::INVALID_CHANNEL_REGEX.match(name)
         raise Pusher::Error, "Illegal channel name '#{name}'"
-      elsif name.length > 200
-        raise Pusher::Error, "Channel name too long (limit 100 characters) '#{name}'"
+      elsif name.length > 164
+        raise Pusher::Error, "Channel name too long (limit 164 characters) '#{name}'"
       end
       @uri.path = @uri.path + "/channels/#{name}/"
       @name = name
@@ -34,7 +34,10 @@ module Pusher
     #
     def trigger_async(event_name, data, socket_id = nil)
       params = {}
-      params[:socket_id] = socket_id if socket_id
+      if socket_id
+        validate_socket_id(socket_id)
+        params[:socket_id] = socket_id
+      end
       @client.trigger_async(name, event_name, data, params)
     end
 
@@ -60,7 +63,10 @@ module Pusher
     #
     def trigger!(event_name, data, socket_id = nil)
       params = {}
-      params[:socket_id] = socket_id if socket_id
+      if socket_id
+        validate_socket_id(socket_id)
+        params[:socket_id] = socket_id
+      end
       @client.trigger(name, event_name, data, params)
     end
 
@@ -90,6 +96,20 @@ module Pusher
       @client.get("/channels/#{name}", :info => attributes.join(','))
     end
 
+    # Request users for a presence channel
+    # Only works on presence channels (see: http://pusher.com/docs/client_api_guide/client_presence_channels and https://pusher.com/docs/rest_api)
+    #
+    # @example Response
+    #   [{"id"=>"4"}]
+    #
+    # @return [Hash] Array of user hashes for this channel
+    # @raise [Pusher::Error] on invalid Pusher response - see the error message for more details
+    # @raise [Pusher::HTTPError] on any error raised inside Net::HTTP - the original error is available in the original_error attribute
+    #
+    def users
+      @client.get("/channels/#{name}/users")[:users]
+    end
+
     # Compute authentication string required as part of the authentication
     # endpoint response. Generally the authenticate method should be used in
     # preference to this one
@@ -101,9 +121,7 @@ module Pusher
     # @return [String]
     #
     def authentication_string(socket_id, custom_string = nil)
-      if socket_id.nil? || socket_id.empty?
-        raise Error, "Invalid socket_id #{socket_id}"
-      end
+      validate_socket_id(socket_id)
 
       unless custom_string.nil? || custom_string.kind_of?(String)
         raise Error, 'Custom argument must be a string'
@@ -147,6 +165,14 @@ module Pusher
       r = {:auth => auth}
       r[:channel_data] = custom_data if custom_data
       r
+    end
+
+    private
+
+    def validate_socket_id(socket_id)
+      unless socket_id && /\A\d+\.\d+\z/.match(socket_id)
+        raise Pusher::Error, "Invalid socket ID #{socket_id.inspect}"
+      end
     end
   end
 end
